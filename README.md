@@ -47,8 +47,34 @@ Then run the crawler it will create meta data table under the database.
 
     ![image](https://github.com/user-attachments/assets/219eb9bf-6086-4dd8-88b9-a7d2b22a87c7)
 
-    Now create a connection in Glue for JDBC,then create a VPC Endpoint for S3 bucket
-    Then create Glue Crawler for redshift table,after running the crawler meta table will be created. 
+    Now create a connection in Glue for JDBC,then create a VPC Endpoint for S3 bucket.
+    Then create Glue Crawler for redshift table,after running the crawler meta table will be created.
+
+6. The interesting part is here Creating the AWS Glue Visual ETL script:
+   i] Add the data source as AWS Glue Catalog,choose the Database and table.
+   ii] Now add transform - Evaluate Data Quality, then enter rules for data_quality_check.Select original data and Data Quality result options
+   iii] 2 transforms will be created. In ruleOutCome add target as S3 bucket with Format as JSON and attach S3 bucket's rule_outcome folder.
+   iv] In rowLevelOutCome add conditional router,2 transforms will be created now choose AND operator with key as DataQualityEvaluationResult, operation as matches, value as Failed. Now the records which will fail the rule will go to the failed_records side and passed records will added to default
+
+7. Add target to the failed_records so that the records will be uploaded to the bad_records in the S3 bucket.
+8. Add change schema to default group, drop the unwanted columns and update the data types.
+9. Add target to Glue Data Catalog to change schema which will connect to the destination table by choosing the database and the table.
+10. Finally save the script and run it.
+
+   ![image](https://github.com/user-attachments/assets/690a3833-9a54-434f-8b19-289061bd8144)
+
+we can check the success by running select query in redshift editor 
+
+![image](https://github.com/user-attachments/assets/851e44b9-9d3b-43ca-8f5e-01462a93fc51)
+
+also check the S3 bucket the bad records will be added to the bad_record folder
+
+![image](https://github.com/user-attachments/assets/7fc19f68-146f-416b-ae1a-9aa3b968ce6d)
+
+11. Now create AWS EventBridge rule to capture the success of records after running the data_quality_check, integrate the SNS topic with email endpoint so that we can get notification to our email. 
+
+![image](https://github.com/user-attachments/assets/bb915600-ba40-4188-873d-b0baeace4374)
+
 
 
 
